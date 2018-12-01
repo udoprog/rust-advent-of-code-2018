@@ -1,15 +1,15 @@
-pub use failure::{Error, format_err, ResultExt};
+pub use failure::{format_err, Error, ResultExt};
 pub use nalgebra as na;
-pub use std::io::{BufRead, BufReader};
 pub use num::{BigInt, BigUint};
 pub use std::collections::*;
+pub use std::io::{BufRead, BufReader};
 
 /// Get the input as a string.
 #[macro_export]
 macro_rules! input_str {
     ($name:expr) => {
         include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/input/", $name))
-    }
+    };
 }
 
 /// Load an input file.
@@ -17,19 +17,20 @@ macro_rules! input_str {
 macro_rules! input {
     ($name:expr) => {
         std::io::Cursor::new(input_str!($name))
-    }
+    };
 }
 
 /// Read input as a long set of columns.
 #[macro_export]
 macro_rules! columns {
     ($name:expr, $sep:expr, $ty:ty) => {
-        input_str!($name).trim()
+        input_str!($name)
+            .trim()
             .split($sep)
             .filter(|s| !s.is_empty())
             .map(str::parse)
             .collect::<Result<Vec<$ty>, _>>()?
-    }
+    };
 }
 
 /// Read and parse lines.
