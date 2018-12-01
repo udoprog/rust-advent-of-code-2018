@@ -2,6 +2,7 @@ pub use failure::{Error, format_err, ResultExt};
 pub use nalgebra as na;
 pub use std::io::{BufRead, BufReader};
 pub use num::{BigInt, BigUint};
+pub use std::collections::*;
 
 /// Get the input as a string.
 #[macro_export]
@@ -27,7 +28,7 @@ macro_rules! columns {
             .split($sep)
             .filter(|s| !s.is_empty())
             .map(str::parse)
-            .collect::<Result<Vec<$ty>, _>>()
+            .collect::<Result<Vec<$ty>, _>>()?
     }
 }
 
