@@ -16,7 +16,7 @@ fn part2(mods: &[i64]) -> Option<i64> {
 }
 
 fn main() -> Result<(), Error> {
-    let mods = columns!("day1.txt", char::is_whitespace, i64);
+    let mods = columns!(input!("day1.txt"), char::is_whitespace, i64);
 
     assert_eq!(497, mods.iter().cloned().sum::<i64>());
     assert_eq!(Some(558), part2(&mods));

@@ -1,4 +1,4 @@
-pub use failure::{format_err, Error, ResultExt};
+pub use failure::{bail, format_err, Error, ResultExt};
 pub use nalgebra as na;
 pub use num::{BigInt, BigUint};
 pub use std::collections::*;
@@ -21,63 +21,134 @@ macro_rules! input {
 }
 
 /// Read input as a long set of columns.
+///
+/// # Examples
+///
+/// Parsing different lines in different ways:
+///
+/// ```rust
+/// use aoc2018::*;
+///
+/// fn main() -> Result<(), Error> {
+///     let mut d = std::io::Cursor::new("1 2\n3\t4");
+///     assert_eq!(columns!(d, char::is_whitespace, u32), vec![1, 2, 3, 4]);
+///     Ok(())
+/// }
+/// ```
 #[macro_export]
 macro_rules! columns {
-    ($name:expr, $sep:expr, $ty:ty) => {
-        input_str!($name)
+    ($data:expr, $sep:expr, $ty:ty) => {{
+        use std::io::Read;
+
+        let mut buf = String::new();
+        $data.read_to_string(&mut buf)?;
+        buf
             .trim()
             .split($sep)
             .filter(|s| !s.is_empty())
             .map(str::parse)
             .collect::<Result<Vec<$ty>, _>>()?
-    };
+    }};
 }
 
 /// Read and parse lines.
+///
+/// Builds an iterator out of the given specification that will attempt to parse columns from each
+/// line and provide excellent diagnostics in case it can't.
+///
+/// # Examples
+///
+/// Parsing different lines in different ways:
+///
+/// ```rust
+/// use aoc2018::*;
+///
+/// fn main() -> Result<(), Error> {
+///     let mut d = std::io::Cursor::new("1 2\nfoo 4");
+///
+///     for line in lines!(&mut d, u32, u32).take(1) {
+///         assert_eq!(line?, (1, 2));
+///     }
+///
+///     for line in lines!(&mut d, String, u32).take(1) {
+///         assert_eq!(line?, (String::from("foo"), 4));
+///     }
+///
+///     Ok(())
+/// }
+/// ```
 #[macro_export]
 macro_rules! lines {
     ($data:expr, $($ty:ty),*) => {{
         struct Iter<R, N> {
             data: R,
-            i: N,
-            line: String,
+            line: N,
+            buf: String,
         }
 
         impl<R, N> Iterator for Iter<R, N> where R: std::io::BufRead, N: Iterator<Item = usize> {
-            type Item = ($($ty,)*);
+            type Item = Result<($($ty,)*), Error>;
 
             fn next(&mut self) -> Option<Self::Item> {
-                let size = self.data.read_line(&mut self.line)
-                    .expect("failed to read line");
+                self.buf.clear();
+
+                let size = match self.data.read_line(&mut self.buf) {
+                    Err(e) => return Some(Err(Error::from(e))),
+                    Ok(size) => size,
+                };
 
                 if size == 0 {
                     return None;
                 }
 
-                let mut it = self.line.split_whitespace();
+                let mut cols = self.buf.split_whitespace();
 
-                let i = self.i.next().unwrap();
-                let mut n = 1..;
+                let line = match self.line.next() {
+                    None => return Some(Err(format_err!("no more lines"))),
+                    Some(line) => line,
+                };
+
+                let mut col = 1..;
 
                 let out = ($({
-                    let n = n.next().unwrap();
-
-                    it.next()
-                        .ok_or_else(|| format!("missing column"))
-                        .and_then(|p| str::parse::<$ty>(p).map_err(|e| format!("bad value `{}`: {}", p, e)))
-                        .map_err(|e| format!("bad `{}` on {}:{}: {}", stringify!($ty), i, n, e))
-                        .expect("bad line")
+                    match $crate::parse_column(stringify!($ty), line, &mut cols, &mut col) {
+                        Err(e) => return Some(Err(e)),
+                        Ok(d) => d,
+                    }
                 },)*);
 
-                self.line.clear();
-                Some(out)
+                return Some(Ok(out));
             }
         }
 
         Iter {
             data: $data,
-            i: 1..,
-            line: String::new(),
+            line: 1..,
+            buf: String::new(),
         }
     }}
+}
+
+/// Parse a single column with the given type.
+pub fn parse_column<'a, T>(
+    ty: &'static str,
+    line: usize,
+    mut it: impl Iterator<Item = &'a str>,
+    mut col: impl Iterator<Item = usize>,
+) -> Result<T, Error>
+    where T: std::str::FromStr,
+          T::Err: std::fmt::Display,
+{
+    let col = match col.next() {
+        Some(col) => col,
+        None => bail!("no more columns"),
+    };
+
+    let d = it
+        .next()
+        .ok_or_else(|| format!("missing column"))
+        .and_then(|p| str::parse::<T>(p).map_err(|e| format!("bad value `{}`: {}", p, e)))
+        .map_err(|e| format_err!("bad `{}` on {}:{}: {}", ty, line, col, e))?;
+
+    Ok(d)
 }
