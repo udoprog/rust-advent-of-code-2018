@@ -42,8 +42,7 @@ macro_rules! columns {
 
         let mut buf = String::new();
         $data.read_to_string(&mut buf)?;
-        buf
-            .trim()
+        buf.trim()
             .split($sep)
             .filter(|s| !s.is_empty())
             .map(str::parse)
@@ -136,8 +135,9 @@ pub fn parse_column<'a, T>(
     mut it: impl Iterator<Item = &'a str>,
     mut col: impl Iterator<Item = usize>,
 ) -> Result<T, Error>
-    where T: std::str::FromStr,
-          T::Err: std::fmt::Display,
+where
+    T: std::str::FromStr,
+    T::Err: std::fmt::Display,
 {
     let col = match col.next() {
         Some(col) => col,
