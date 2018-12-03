@@ -152,3 +152,47 @@ where
 
     Ok(d)
 }
+
+/// Ignore input.
+pub struct Skip;
+
+impl std::str::FromStr for Skip {
+    type Err = Error;
+
+    fn from_str(_: &str) -> Result<Self, Self::Err> {
+        Ok(Skip)
+    }
+}
+
+macro_rules! tuple {
+    ($name:ident, $($ty:ident),*) => {
+        #[derive(Debug)]
+        pub struct $name<$($ty,)*>($(pub $ty,)*);
+
+        impl<$($ty,)*> std::str::FromStr for $name<$($ty,)*>
+        where
+            $(
+            $ty: std::str::FromStr,
+            $ty::Err: 'static + Send + Sync + std::error::Error,
+            )*
+        {
+            type Err = Error;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                let mut it = s.split(|c| !char::is_numeric(c)).filter(|s| s.trim() != "");
+
+                Ok($name($({
+                    let x = it.next().ok_or_else(|| format_err!("expected x"))?;
+                    $ty::from_str(x)?
+                },)*))
+            }
+        }
+    }
+}
+
+/// Decoded a pair of values.
+tuple!(Pair, A, B);
+/// Decodes a triple of values.
+tuple!(Triple, A, B, C);
+tuple!(Tup4, A, B, C, D);
+tuple!(Tup5, A, B, C, D, E);
