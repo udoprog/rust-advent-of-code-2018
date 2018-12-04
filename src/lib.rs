@@ -1,8 +1,10 @@
+pub use chrono::Timelike;
 pub use failure::{bail, format_err, Error, ResultExt};
 pub use nalgebra as na;
 pub use num::{BigInt, BigUint};
 pub use std::collections::*;
 pub use std::io::{BufRead, BufReader};
+pub use std::str;
 
 /// Get the input as a string.
 #[macro_export]
