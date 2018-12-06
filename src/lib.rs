@@ -166,6 +166,17 @@ impl std::str::FromStr for Skip {
     }
 }
 
+/// Trim non-numeric parts.
+pub struct Trim<T>(pub T);
+
+impl<T> std::str::FromStr for Trim<T> where T: std::str::FromStr {
+    type Err = T::Err;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        T::from_str(input.trim_matches(|c| !char::is_numeric(c))).map(Trim)
+    }
+}
+
 macro_rules! tuple {
     ($name:ident, $($ty:ident),*) => {
         #[derive(Debug)]
