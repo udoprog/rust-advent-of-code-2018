@@ -37,6 +37,24 @@ fn naive(input: &str) -> usize {
     }
 }
 
+/// Clever implementation.
+fn clever(input: &str) -> usize {
+    let mut stack = Vec::new();
+
+    for c in input.trim().chars() {
+        match stack.last().cloned() {
+            Some(n) if is_polar(n, c) => {
+                stack.pop();
+            },
+            _ => {
+                stack.push(c);
+            },
+        }
+    }
+
+    stack.len()
+}
+
 /// Test all against the given input, after removing each unique character from the input.
 fn test_with_removal(input: &str, f: impl Fn(&str) -> usize) -> Option<usize> {
     let chars = input
@@ -68,8 +86,10 @@ fn main() -> Result<(), Error> {
     // Part 1.
     assert_eq!(naive("dabAcCaCBAcCcaDA"), 10);
     assert_eq!(naive(input_str!("day5.txt")), 11364);
+    assert_eq!(clever(input_str!("day5.txt")), 11364);
 
     // Part 2.
     assert_eq!(test_with_removal(input_str!("day5.txt"), naive), Some(4212));
+    assert_eq!(test_with_removal(input_str!("day5.txt"), clever), Some(4212));
     Ok(())
 }
