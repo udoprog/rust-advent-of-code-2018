@@ -133,10 +133,13 @@ fn part2(bx: Bounds, by: Bounds, constraint: impl Fn(Coord) -> bool) -> usize {
     let mut visited = HashSet::new();
     let mut queue = VecDeque::new();
 
-    for y in by.0..=by.1 {
-        for x in bx.0..=bx.1 {
-            queue.push_back((x, y));
+    for c in (by.0..=by.1).flat_map(|y| (bx.0..=bx.1).map(move |x| (x, y))) {
+        if !constraint(c) {
+            continue;
         }
+
+        queue.push_back(c);
+        break;
     }
 
     let mut count = 0;
