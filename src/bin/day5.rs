@@ -45,10 +45,10 @@ fn clever(input: &str) -> usize {
         match stack.last().cloned() {
             Some(n) if is_polar(n, c) => {
                 stack.pop();
-            },
+            }
             _ => {
                 stack.push(c);
-            },
+            }
         }
     }
 
@@ -90,6 +90,9 @@ fn main() -> Result<(), Error> {
 
     // Part 2.
     assert_eq!(test_with_removal(input_str!("day5.txt"), naive), Some(4212));
-    assert_eq!(test_with_removal(input_str!("day5.txt"), clever), Some(4212));
+    assert_eq!(
+        test_with_removal(input_str!("day5.txt"), clever),
+        Some(4212)
+    );
     Ok(())
 }

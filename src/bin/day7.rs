@@ -29,10 +29,13 @@ fn part2(deps: &HashMap<char, Vec<char>>, base: u32, worker_count: usize) -> u32
     let mut satisfied = HashSet::new();
     let mut out = Vec::new();
 
-    let mut workers = std::iter::repeat(()).map(|_| Worker {
-        work: 0u32,
-        current: None,
-    }).take(worker_count).collect::<Vec<_>>();
+    let mut workers = std::iter::repeat(())
+        .map(|_| Worker {
+            work: 0u32,
+            current: None,
+        })
+        .take(worker_count)
+        .collect::<Vec<_>>();
 
     let mut tick = 0;
 
@@ -58,27 +61,20 @@ fn part2(deps: &HashMap<char, Vec<char>>, base: u32, worker_count: usize) -> u32
             break;
         }
 
-        if idle.is_empty() {
-            continue;
-        }
+        // test if all dependencies are satisfied for the given node.
+        let test = |c: &char| match deps.get(c) {
+            Some(deps) => deps.iter().all(|dep| satisfied.contains(&dep)),
+            None => true,
+        };
 
-        for c in left.iter().cloned().collect::<Vec<_>>() {
-            if idle.is_empty() {
-                break;
-            }
-
-            let ok = match deps.get(&c) {
-                Some(deps) => deps.iter().all(|dep| satisfied.contains(&dep)),
-                None => true,
-            };
-
-            if ok {
-                if let Some(w) = idle.pop() {
-                    w.work = base + (c as u32) - ('A' as u32) + 1;
-                    w.current = Some(c);
-                    left.remove(&c);
-                }
-            }
+        for (w, c) in idle
+            .into_iter()
+            .zip(left.iter().cloned().filter(test))
+            .collect::<Vec<_>>()
+        {
+            w.work = base + (c as u32) - ('A' as u32) + 1;
+            w.current = Some(c);
+            left.remove(&c);
         }
     }
 
@@ -113,8 +109,18 @@ fn deps(lines: &[String]) -> HashMap<char, Vec<char>> {
 
     for line in lines {
         let mut it = line.as_str().trim().split(" ");
-        let before = it.nth(1).expect("before").chars().next().expect("before not char");
-        let after = it.nth(5).expect("after").chars().next().expect("after not char");
+        let before = it
+            .nth(1)
+            .expect("before")
+            .chars()
+            .next()
+            .expect("before not char");
+        let after = it
+            .nth(5)
+            .expect("after")
+            .chars()
+            .next()
+            .expect("after not char");
 
         deps.entry(after).or_default().push(before);
         deps.entry(before).or_default();

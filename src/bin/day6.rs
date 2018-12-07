@@ -47,21 +47,21 @@ fn part1(bx: Bounds, by: Bounds, coords: &[Coord]) -> Option<u32> {
                 hash_map::Entry::Vacant(e) => {
                     e.insert(Node::Distance(i, d));
                     true
-                },
+                }
                 hash_map::Entry::Occupied(mut e) => {
                     // test existing node.
                     match *e.get() {
                         Node::Distance(_, p) | Node::Conflicted(p) if p > d => {
                             e.insert(Node::Distance(i, d));
                             true
-                        },
+                        }
                         Node::Distance(other, p) if p == d && other != i => {
                             e.insert(Node::Conflicted(d));
                             false
-                        },
+                        }
                         _ => false,
                     }
-                },
+                }
             };
 
             if step {
@@ -84,7 +84,10 @@ fn part1(bx: Bounds, by: Bounds, coords: &[Coord]) -> Option<u32> {
         }
     }
 
-    return results.into_iter().max_by(|a, b| a.1.cmp(&b.1)).map(|n| n.1);
+    return results
+        .into_iter()
+        .max_by(|a, b| a.1.cmp(&b.1))
+        .map(|n| n.1);
 
     /// Test if a coord is constrained in all directions.
     ///
@@ -197,7 +200,6 @@ fn main() -> Result<(), Error> {
         _ => panic!("no y bounds"),
     };
 
-
     assert_eq!(part1(bx, by, &coords), Some(3882));
     assert_eq!(part2(bx, by, |c| part2_constraint(c, &coords)), 43852);
     return Ok(());
@@ -219,10 +221,5 @@ fn main() -> Result<(), Error> {
 
 /// Get all neighbours for the given node.
 fn neigh((x, y): Coord) -> [Coord; 4] {
-    [
-        (x - 1, y),
-        (x + 1, y),
-        (x, y + 1),
-        (x, y - 1),
-    ]
+    [(x - 1, y), (x + 1, y), (x, y + 1), (x, y - 1)]
 }
