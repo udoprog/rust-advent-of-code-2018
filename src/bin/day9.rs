@@ -3,37 +3,34 @@ use aoc2018::*;
 use std::fmt;
 use std::ptr;
 
-fn unsafe_game(players: u32, highest_score: u32) -> Option<u32> {
+fn unsafe_game(players: u32, highest: u32) -> Option<u32> {
     let mut cur = Node::new(0);
     let mut scores = HashMap::<u32, u32>::new();
 
-    for (p, marble) in std::iter::repeat(()).flat_map(|_| 0..players).zip(1..) {
+    for (p, marble) in (0..players).cycle().zip(1..).take(highest as usize) {
         if marble % 23 == 0 {
             cur = cur.back(7);
             let (next, last_marble) = cur.unlink();
             *scores.entry(p).or_default() += marble + last_marble;
             cur = next.expect("no more nodes");
         } else {
-            cur = cur.forward(1);
-            cur = cur.insert(marble);
-        }
-
-        if marble == highest_score {
-            break;
+            cur = cur.forward(1).insert(marble);
         }
     }
 
     return scores.iter().max_by(|a, b| a.1.cmp(&b.1)).map(|e| *e.1);
 }
 
-fn game(players: u32, highest_score: u32) -> Option<u32> {
+fn game(players: u32, highest: u32) -> Option<u32> {
     let mut circle = VecDeque::new();
     circle.push_back(0);
 
     let mut cur = 0;
     let mut scores = HashMap::<u32, u32>::new();
 
-    for (p, marble) in std::iter::repeat(()).flat_map(|_| 0..players).zip(1..) {
+    let it = (0..players).cycle().zip(1..).take(highest as usize);
+
+    for (p, marble) in it {
         if marble % 23 == 0 {
             let mut score = marble;
 
@@ -57,10 +54,6 @@ fn game(players: u32, highest_score: u32) -> Option<u32> {
             }
 
             circle.insert(cur, marble);
-        }
-
-        if marble == highest_score {
-            break;
         }
     }
 
