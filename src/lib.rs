@@ -4,6 +4,7 @@ pub use nalgebra as na;
 pub use num::{BigInt, BigUint};
 pub use std::collections::*;
 pub use std::io::{BufRead, BufReader};
+use std::ops;
 pub use std::str;
 
 /// Get the input as a string.
@@ -212,3 +213,72 @@ tuple!(Pair, A, B);
 tuple!(Triple, A, B, C);
 tuple!(Tup4, A, B, C, D);
 tuple!(Tup5, A, B, C, D, E);
+
+/// A helper that helps calcualte a minimum and maximum value.
+///
+/// # Examples
+///
+/// ```rust
+/// use aoc2018::MinMax;
+///
+/// let mut dx = MinMax::default();
+///
+/// assert_eq!(dx.delta(), None);
+/// dx.sample(5);
+/// assert_eq!(dx.delta(), Some(0));
+/// dx.sample(3);
+/// assert_eq!(dx.delta(), Some(2));
+///
+/// assert_eq!(dx.range_inclusive().collect::<Vec<_>>(), vec![3, 4, 5]);
+/// ```
+#[derive(Debug, Default)]
+pub struct MinMax<Idx> {
+    value: Option<(Idx, Idx)>,
+}
+
+impl<Idx> MinMax<Idx>
+where
+    Idx: Copy,
+{
+    /// Sample the value to put into the MinMax calculation.
+    pub fn sample(&mut self, value: Idx)
+    where
+        Idx: PartialOrd,
+    {
+        self.value = match self.value.take() {
+            Some((min, max)) => {
+                let min = if value < min { value } else { min };
+                let max = if value > max { value } else { max };
+                Some((min, max))
+            }
+            None => Some((value, value)),
+        };
+    }
+
+    /// Get a copy of the current min/max value.
+    pub fn get(&self) -> Option<(Idx, Idx)> {
+        self.value.clone()
+    }
+
+    /// Calculate the delta if the stored value is `Sub<Idx>`.
+    pub fn delta(&self) -> Option<Idx>
+    where
+        Idx: ops::Sub<Idx, Output = Idx>,
+    {
+        self.value
+            .clone()
+            .map(|(mn, mx)| mx - mn)
+    }
+
+    /// Calculates an inclusive range if there is one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is no samples.
+    pub fn range_inclusive(&self) -> ops::RangeInclusive<Idx> {
+        self.value
+            .clone()
+            .map(|(mn, mx)| ops::RangeInclusive::new(mn, mx))
+            .expect("no samples")
+    }
+}

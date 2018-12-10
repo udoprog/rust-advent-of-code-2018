@@ -16,19 +16,17 @@ fn main() -> Result<(), Error> {
     }
 
     for i in 1.. {
-        let mut xp = (1000000i32, -1000000i32);
-        let mut yp = (1000000i32, -1000000i32);
+        let mut xp = MinMax::default();
+        let mut yp = MinMax::default();
 
         for &mut (ref mut pos, ref vel) in &mut points {
             *pos += *vel;
 
-            xp.0 = i32::min(pos.x, xp.0);
-            xp.1 = i32::max(pos.x, xp.1);
-            yp.0 = i32::min(pos.y, yp.0);
-            yp.1 = i32::max(pos.y, yp.1);
+            xp.sample(pos.x);
+            yp.sample(pos.y);
         }
 
-        if yp.1 - yp.0 != 9 {
+        if yp.delta() != Some(9) {
             continue;
         }
 
@@ -38,8 +36,8 @@ fn main() -> Result<(), Error> {
             by_pos.insert(*pos);
         }
 
-        for y in yp.0..=yp.1 {
-            for x in xp.0..=xp.1 {
+        for y in yp.range_inclusive() {
+            for x in xp.range_inclusive() {
                 if by_pos.contains(&na::Vector2::new(x, y)) {
                     print!("#");
                 } else {
