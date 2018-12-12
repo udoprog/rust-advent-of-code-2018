@@ -2,6 +2,23 @@ use aoc2018::*;
 
 use std::fmt;
 
+struct DisplaySet<'a>(&'a HashSet<i64>);
+
+impl fmt::Display for DisplaySet<'_> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some((min, max)) = self.0.iter().cloned().minmax().into_option() {
+            for i in min..=max {
+                match self.0.contains(&i) {
+                    true => '#'.fmt(fmt)?,
+                    false => '.'.fmt(fmt)?,
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
 struct Display<'a>(&'a VecDeque<bool>);
 
 impl fmt::Display for Display<'_> {
@@ -15,6 +32,56 @@ impl fmt::Display for Display<'_> {
 
         Ok(())
     }
+}
+
+/// Better implementation that uses sparse sets to store and query the patterns.
+///
+/// Has not been implemented to detect linearly shifting plants yet.
+fn better(state: &[bool], m: &HashMap<Vec<bool>, bool>, generations: usize) -> i64 {
+    let patterns = m
+        .iter()
+        .filter(|e| *e.1)
+        .map(|e| {
+            (-2i64..)
+                .zip(e.0.iter().cloned())
+                .filter(|e| e.1)
+                .map(|e| e.0)
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+
+    let mut state = (0i64..)
+        .zip(state.iter().cloned())
+        .filter(|e| e.1)
+        .map(|e| e.0)
+        .collect::<HashSet<_>>();
+
+    for g in 0..generations {
+        println!("{}", DisplaySet(&state));
+
+        let (min, max) = state
+            .iter()
+            .cloned()
+            .minmax()
+            .into_option()
+            .expect("expected min and max");
+
+        state = (min - 3..=max + 3)
+            .filter(|idx| {
+                patterns.iter().any(|pat| {
+                    [-2, -1, 0, 1, 2].into_iter().all(|t| {
+                        if pat.contains(t) {
+                            state.contains(&(*idx + *t))
+                        } else {
+                            !state.contains(&(*idx + *t))
+                        }
+                    })
+                })
+            })
+            .collect::<HashSet<_>>();
+    }
+
+    state.into_iter().sum()
 }
 
 fn calculate(state: &[bool], m: &HashMap<Vec<bool>, bool>, generations: usize) -> i64 {
@@ -139,6 +206,7 @@ fn main() -> Result<(), Error> {
         m.insert(from.chars().map(|c| c == '#').collect(), to);
     }
 
+    assert_eq!(better(&state, &m, 20), 3061);
     assert_eq!(calculate(&state, &m, 20), 3061);
     assert_eq!(calculate(&state, &m, 50000000000), 4049999998575);
     Ok(())

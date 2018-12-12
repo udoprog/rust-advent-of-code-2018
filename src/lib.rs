@@ -1,8 +1,10 @@
 pub use chrono::Timelike;
 pub use failure::{bail, format_err, Error, ResultExt};
+pub use hashbrown::*;
+pub use itertools::Itertools;
 pub use nalgebra as na;
 pub use num::{BigInt, BigUint};
-pub use std::collections::*;
+pub use std::collections::VecDeque;
 pub use std::io::{BufRead, BufReader};
 use std::ops;
 pub use std::str;
