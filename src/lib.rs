@@ -265,9 +265,7 @@ where
     where
         Idx: ops::Sub<Idx, Output = Idx>,
     {
-        self.value
-            .clone()
-            .map(|(mn, mx)| mx - mn)
+        self.value.clone().map(|(mn, mx)| mx - mn)
     }
 
     /// Calculates an inclusive range if there is one.

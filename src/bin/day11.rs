@@ -26,9 +26,7 @@ fn part2(grid: &HashMap<(i64, i64), i64>) -> Option<(i64, i64, i64, i64)> {
     let mut dynamic = HashMap::<_, i64>::new();
     let mut levels = Vec::new();
 
-    let get = move |x, y| {
-        grid.get(&(x, y)).cloned().unwrap_or_default()
-    };
+    let get = move |x, y| grid.get(&(x, y)).cloned().unwrap_or_default();
 
     for i in 1..=300 {
         for y in 0..=(300 - i) {
@@ -50,7 +48,6 @@ fn part2(grid: &HashMap<(i64, i64), i64>) -> Option<(i64, i64, i64, i64)> {
 
     levels.into_iter().max_by(|a, b| a.3.cmp(&b.3))
 }
-
 
 fn main() -> Result<(), Error> {
     let grid_serial = 7165i64;
