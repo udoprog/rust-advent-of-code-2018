@@ -65,8 +65,7 @@ fn part2(mut input: usize) -> usize {
         }
 
         needle.push(input);
-
-        (&mut needle[..]).reverse();
+        needle.reverse();
         needle
     };
 
