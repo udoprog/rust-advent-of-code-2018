@@ -12,11 +12,7 @@ impl Recipe {
         data.push(3);
         data.push(7);
 
-        Recipe {
-            data,
-            a: 0,
-            b: 1,
-        }
+        Recipe { data, a: 0, b: 1 }
     }
 
     fn make(&mut self) -> usize {
@@ -47,10 +43,13 @@ impl Recipe {
 fn part1(input: usize) -> String {
     let mut recipe = Recipe::new();
 
-    while recipe.make() < (input + 10) {
-    }
+    while recipe.make() < (input + 10) {}
 
-    recipe.data[input..(input + 10)].iter().cloned().map(|d| d.to_string()).collect()
+    recipe.data[input..(input + 10)]
+        .iter()
+        .cloned()
+        .map(|d| d.to_string())
+        .collect()
 }
 
 fn part2(mut input: usize) -> usize {

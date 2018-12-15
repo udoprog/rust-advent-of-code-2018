@@ -4,7 +4,7 @@ pub use hashbrown::*;
 pub use itertools::Itertools;
 pub use nalgebra as na;
 pub use num::{BigInt, BigUint};
-pub use std::collections::VecDeque;
+pub use std::collections::{btree_map, btree_set, BTreeMap, BTreeSet, VecDeque};
 pub use std::io::{BufRead, BufReader};
 use std::ops;
 pub use std::str;
