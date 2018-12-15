@@ -333,13 +333,14 @@ impl State {
                 write!(out, "{}[2J", 27 as char)?;
             }
 
+            writeln!(out, "{}", Display(&self))?;
+
             if let Some(title) = self.title.as_ref() {
                 writeln!(out, "{}", title)?;
             }
 
             writeln!(out, "Killed: {:?}", self.killed)?;
             writeln!(out, "Tick: {}", tick)?;
-            writeln!(out, "{}", Display(&self))?;
 
             let prioritized_units = self.find_priority_units();
 
@@ -457,7 +458,7 @@ impl Unit {
 }
 
 fn save_the_elves(mut original: State) -> Result<u64, Error> {
-    original.sleep = 0;
+    original.sleep = 20;
 
     for ap in 4.. {
         let mut state = original.clone();
@@ -501,13 +502,13 @@ impl fmt::Display for Display<'_> {
                 let p = Pos(x, y);
 
                 match state.walls.contains(&p) {
-                    true => "#".fmt(fmt)?,
+                    true => "🧱".fmt(fmt)?,
                     false => match state.find_unit_by_position(p) {
                         Some(unit) => match unit.kind {
-                            Kind::Goblin => "G".fmt(fmt)?,
-                            Kind::Elf => "E".fmt(fmt)?,
+                            Kind::Goblin => "👹".fmt(fmt)?,
+                            Kind::Elf => "🧝".fmt(fmt)?,
                         },
-                        None => ".".fmt(fmt)?,
+                        None => "⬛".fmt(fmt)?,
                     },
                 }
             }
