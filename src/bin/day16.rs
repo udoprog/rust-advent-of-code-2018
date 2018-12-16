@@ -312,7 +312,11 @@ fn main() -> Result<(), Error> {
 
     assert_eq!(it.next(), Some(""));
     assert_eq!(part2(&decoder, it.clone(), NoopVisuals)?, 554);
-    assert_eq!(part2(&decoder, it.clone(), NcursesVisuals::new(50))?, 554);
+    assert_eq!(part2(&decoder, it.clone(), NcursesVisuals::new(5))?, 554);
+    assert_eq!(
+        part2(&decoder, it.clone(), NcursesVisuals::new(50).interactive())?,
+        554
+    );
 
     Ok(())
 }
@@ -343,6 +347,7 @@ impl Visuals for NoopVisuals {
 
 struct NcursesVisuals {
     sleep: u64,
+    interactive: bool,
     last: Vec<(OpCode, Instruction)>,
     changed: HashSet<usize>,
 }
@@ -351,9 +356,15 @@ impl NcursesVisuals {
     pub fn new(sleep: u64) -> Self {
         Self {
             sleep,
+            interactive: false,
             last: Default::default(),
             changed: Default::default(),
         }
+    }
+
+    pub fn interactive(mut self) -> Self {
+        self.interactive = true;
+        self
     }
 }
 
@@ -367,14 +378,23 @@ impl Visuals for NcursesVisuals {
     fn done(device: &mut Device) -> Result<(), Error> {
         let a = device.reg(0)?.to_string();
 
-        ncurses::mvprintw(12, 2, "Result is ");
+        ncurses::mv(12, 2);
+        ncurses::printw("Result is ");
 
         ncurses::attron(ncurses::A_BLINK() | ncurses::A_STANDOUT());
-        ncurses::mvprintw(12, 12, &a);
+        ncurses::printw(&a);
         ncurses::attroff(ncurses::A_BLINK() | ncurses::A_STANDOUT());
 
-        ncurses::mvprintw(12, 12 + a.len() as i32, ", press [enter] to exit...");
-        ncurses::getch();
+        ncurses::printw(", press [enter] to exit...");
+
+        loop {
+            let c = ncurses::getch();
+
+            if c == 10 {
+                break;
+            }
+        }
+
         ncurses::endwin();
         Ok(())
     }
@@ -416,18 +436,15 @@ impl Visuals for NcursesVisuals {
 
             let standout = self.last.len() == (line + 1) || line == 9;
 
-            let mark = if standout {
+            if standout {
+                ncurses::mv(line as i32 + 1, 1);
+                ncurses::printw(">");
                 ncurses::attron(ncurses::A_STANDOUT());
-                ">>"
             } else {
-                "  "
-            };
+                ncurses::mv(line as i32 + 1, 2);
+            }
 
-            ncurses::mvprintw(
-                line as i32 + 1,
-                0,
-                &format!("{}{} {}, {}, {}", mark, op, a, b, c),
-            );
+            ncurses::printw(&format!("{} {}, {}, {}", op, a, b, c));
 
             if standout {
                 ncurses::attroff(ncurses::A_STANDOUT());
@@ -441,11 +458,14 @@ impl Visuals for NcursesVisuals {
         {
             let c = self.changed.contains(&line);
 
+            ncurses::mv(line as i32 + 1, 16);
+            ncurses::printw(&format!("{} = ", name));
+
             if c {
                 ncurses::attron(ncurses::A_STANDOUT());
             }
 
-            ncurses::mvprintw(line as i32 + 1, 16, &format!("{} = {}", name, value));
+            ncurses::printw(&value.to_string());
 
             if c {
                 ncurses::attroff(ncurses::A_STANDOUT());
@@ -454,7 +474,20 @@ impl Visuals for NcursesVisuals {
 
         ncurses::refresh();
 
-        std::thread::sleep(std::time::Duration::from_millis(self.sleep));
+        if self.interactive {
+            ncurses::mv(12, 2);
+            ncurses::printw("Press [space] to step...");
+
+            loop {
+                let c = ncurses::getch();
+
+                if c == 32 {
+                    break;
+                }
+            }
+        } else {
+            std::thread::sleep(std::time::Duration::from_millis(self.sleep));
+        }
     }
 }
 
