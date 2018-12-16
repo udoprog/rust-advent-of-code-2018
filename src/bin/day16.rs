@@ -1,4 +1,5 @@
 use aoc2018::*;
+use std::fmt;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Device([u64; 4]);
@@ -41,6 +42,33 @@ pub enum OpCode {
     Eqir,
     Eqri,
     Eqrr,
+}
+
+impl fmt::Display for OpCode {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use self::OpCode::*;
+
+        let name = match *self {
+            Addr => "addr",
+            Addi => "addi",
+            Mulr => "mulr",
+            Muli => "muli",
+            Banr => "banr",
+            Bani => "bani",
+            Borr => "borr",
+            Bori => "bori",
+            Setr => "setr",
+            Seti => "seti",
+            Gtir => "gtir",
+            Gtri => "gtri",
+            Gtrr => "gtrr",
+            Eqir => "eqir",
+            Eqri => "eqri",
+            Eqrr => "eqrr",
+        };
+
+        name.fmt(fmt)
+    }
 }
 
 impl OpCode {
@@ -203,6 +231,33 @@ impl Decoder {
     }
 }
 
+fn part2<'a, V>(
+    decoder: &Decoder,
+    it: impl Iterator<Item = &'a str>,
+    mut visuals: V,
+) -> Result<u64, Error>
+where
+    V: Visuals,
+{
+    V::setup();
+
+    let mut device = Device::default();
+    let mut before = None;
+
+    for inst in it.flat_map(Instruction::decode) {
+        visuals.draw(&device, before.as_ref());
+
+        before = Some(device.clone());
+
+        let op = decoder.decode(inst.op_code)?;
+        op.apply(&mut device, &inst.inputs, inst.output)?;
+        visuals.observe(op, inst);
+    }
+
+    V::done(&mut device)?;
+    Ok(*device.reg(0)?)
+}
+
 fn main() -> Result<(), Error> {
     let mut it = input_str!("day16.txt").lines();
 
@@ -256,16 +311,151 @@ fn main() -> Result<(), Error> {
     let decoder = Decoder::new(known);
 
     assert_eq!(it.next(), Some(""));
+    assert_eq!(part2(&decoder, it.clone(), NoopVisuals)?, 554);
+    assert_eq!(part2(&decoder, it.clone(), NcursesVisuals::new(10))?, 554);
 
-    let mut device = Device::default();
+    Ok(())
+}
 
-    for inst in it.flat_map(Instruction::decode) {
-        let op = decoder.decode(inst.op_code)?;
-        op.apply(&mut device, &inst.inputs, inst.output)?;
+trait Visuals {
+    fn setup();
+
+    fn done(device: &mut Device) -> Result<(), Error>;
+
+    fn observe(&mut self, op: OpCode, inst: Instruction);
+
+    fn draw(&mut self, device: &Device, prev: Option<&Device>);
+}
+
+struct NoopVisuals;
+
+impl Visuals for NoopVisuals {
+    fn setup() {}
+
+    fn done(_: &mut Device) -> Result<(), Error> {
+        Ok(())
     }
 
-    assert_eq!(*device.reg(0)?, 554);
-    Ok(())
+    fn observe(&mut self, _: OpCode, _: Instruction) {}
+
+    fn draw(&mut self, _: &Device, _: Option<&Device>) {}
+}
+
+struct NcursesVisuals {
+    sleep: u64,
+    last: Vec<(OpCode, Instruction)>,
+    changed: HashSet<usize>,
+}
+
+impl NcursesVisuals {
+    pub fn new(sleep: u64) -> Self {
+        Self {
+            sleep,
+            last: Default::default(),
+            changed: Default::default(),
+        }
+    }
+}
+
+impl Visuals for NcursesVisuals {
+    fn setup() {
+        ncurses::initscr();
+        ncurses::noecho();
+        ncurses::curs_set(ncurses::CURSOR_VISIBILITY::CURSOR_INVISIBLE);
+    }
+
+    fn done(device: &mut Device) -> Result<(), Error> {
+        let a = device.reg(0)?.to_string();
+
+        ncurses::mvprintw(12, 2, "Result is ");
+
+        ncurses::attron(ncurses::A_BLINK() | ncurses::A_STANDOUT());
+        ncurses::mvprintw(12, 12, &a);
+        ncurses::attroff(ncurses::A_BLINK() | ncurses::A_STANDOUT());
+
+        ncurses::mvprintw(12, 12 + a.len() as i32, ", press [enter] to exit...");
+        ncurses::getch();
+        ncurses::endwin();
+        Ok(())
+    }
+
+    fn observe(&mut self, op: OpCode, inst: Instruction) {
+        self.last.push((op, inst));
+    }
+
+    fn draw(&mut self, device: &Device, prev: Option<&Device>) {
+        if let Some(prev) = prev {
+            self.changed.clear();
+            self.changed.extend(
+                prev.0
+                    .iter()
+                    .cloned()
+                    .zip(device.0.iter().cloned())
+                    .enumerate()
+                    .filter(|(_, (a, b))| a != b)
+                    .map(|(i, _)| i),
+            );
+        }
+
+        ncurses::erase();
+
+        ncurses::attron(ncurses::A_UNDERLINE());
+        ncurses::mvprintw(0, 2, "Instruction");
+        ncurses::mvprintw(0, 16, "Registry");
+        ncurses::attroff(ncurses::A_UNDERLINE());
+
+        let (mut width, mut height) = (0, 0);
+        ncurses::getmaxyx(ncurses::stdscr(), &mut height, &mut width);
+
+        for (line, (op, inst)) in self.last[self.last.len().saturating_sub(10)..]
+            .iter()
+            .enumerate()
+        {
+            let [a, b] = inst.inputs;
+            let c = inst.output;
+
+            let standout = self.last.len() == (line + 1) || line == 9;
+
+            let mark = if standout {
+                ncurses::attron(ncurses::A_STANDOUT());
+                ">>"
+            } else {
+                "  "
+            };
+
+            ncurses::mvprintw(
+                line as i32 + 1,
+                0,
+                &format!("{}{} {}, {}, {}", mark, op, a, b, c),
+            );
+
+            if standout {
+                ncurses::attroff(ncurses::A_STANDOUT());
+            }
+        }
+
+        for (line, (name, value)) in ['A', 'B', 'C', 'D']
+            .into_iter()
+            .zip(device.0.iter())
+            .enumerate()
+        {
+            let c = self.changed.contains(&line);
+
+            if c {
+                ncurses::attron(ncurses::A_STANDOUT());
+            }
+
+            ncurses::mvprintw(line as i32 + 1, 16, &format!("{} = {}", name, value));
+
+            if c {
+                ncurses::attroff(ncurses::A_STANDOUT());
+            }
+        }
+
+        ncurses::refresh();
+
+        std::thread::sleep(std::time::Duration::from_millis(self.sleep));
+    }
 }
 
 #[derive(Debug)]
