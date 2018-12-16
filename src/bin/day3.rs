@@ -2,14 +2,15 @@ use aoc2018::*;
 use std::str;
 
 fn main() -> Result<(), Error> {
-    let mut duplicates = 0;
-    // map out who owns each claim.
-    let mut claimed_by = HashMap::<_, Vec<&str>>::new();
-    let mut nonoverlapping = HashSet::new();
-
     // only read once so we can use references into it to avoid copying the string.
     let lines = lines!(input!("day3.txt"), String, Skip, Pair<u32, u32>, Pair<u32, u32>)
         .collect::<Result<Vec<_>, Error>>()?;
+
+    let mut duplicates = 0;
+
+    // map out who owns each claim.
+    let mut claimed_by = HashMap::<_, Vec<&str>>::new();
+    let mut nonoverlapping = HashSet::new();
 
     for line in &lines {
         let (ref id, _, ref b, ref c) = *line;

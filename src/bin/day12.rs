@@ -56,7 +56,7 @@ fn better(state: &[bool], m: &HashMap<Vec<bool>, bool>, generations: usize) -> i
         .map(|e| e.0)
         .collect::<HashSet<_>>();
 
-    for g in 0..generations {
+    for _ in 0..generations {
         println!("{}", DisplaySet(&state));
 
         let (min, max) = state
