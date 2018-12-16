@@ -288,7 +288,7 @@ impl State {
                 attack = match attack {
                     Some((_, hit_points)) if hit_points > target_unit.hit_points => {
                         Some((target_id, target_unit.hit_points))
-                    },
+                    }
                     None => Some((target_id, target_unit.hit_points)),
                     other => other,
                 };
@@ -487,7 +487,10 @@ fn main() -> Result<(), Error> {
     assert_eq!(State::load(input_str!("day15d.txt"))?.simulate()?, 28944);
     assert_eq!(State::load(input_str!("day15e.txt"))?.simulate()?, 18740);
     assert_eq!(State::load(input_str!("day15.txt"))?.simulate()?, 207059);
-    assert_eq!(save_the_elves(State::load(input_str!("day15.txt"))?)?, 49120);
+    assert_eq!(
+        save_the_elves(State::load(input_str!("day15.txt"))?)?,
+        49120
+    );
     Ok(())
 }
 
