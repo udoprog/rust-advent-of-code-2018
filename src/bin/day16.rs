@@ -312,7 +312,7 @@ fn main() -> Result<(), Error> {
 
     assert_eq!(it.next(), Some(""));
     assert_eq!(part2(&decoder, it.clone(), NoopVisuals)?, 554);
-    assert_eq!(part2(&decoder, it.clone(), NcursesVisuals::new(10))?, 554);
+    assert_eq!(part2(&decoder, it.clone(), NcursesVisuals::new(50))?, 554);
 
     Ok(())
 }
@@ -400,8 +400,8 @@ impl Visuals for NcursesVisuals {
         ncurses::erase();
 
         ncurses::attron(ncurses::A_UNDERLINE());
-        ncurses::mvprintw(0, 2, "Instruction");
-        ncurses::mvprintw(0, 16, "Registry");
+        ncurses::mvprintw(0, 2, "Instructions");
+        ncurses::mvprintw(0, 16, "Registers");
         ncurses::attroff(ncurses::A_UNDERLINE());
 
         let (mut width, mut height) = (0, 0);
@@ -434,7 +434,7 @@ impl Visuals for NcursesVisuals {
             }
         }
 
-        for (line, (name, value)) in ['A', 'B', 'C', 'D']
+        for (line, (name, value)) in ['0', '1', '2', '3']
             .into_iter()
             .zip(device.0.iter())
             .enumerate()
