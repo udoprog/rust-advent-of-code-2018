@@ -9,8 +9,7 @@ pub enum Tile {
     Clay,
     Still,
     Flowing,
-    OutOfBounds,
-    None,
+    Empty,
 }
 
 struct Tiles {
@@ -42,11 +41,34 @@ impl Tiles {
         let mut ry_with_source = ry.clone();
         ry_with_source.sample(source.1);
 
-        Tiles {
+        return Tiles {
             source,
             tiles,
             ry: ry.range_inclusive(),
             ry_with_source: ry_with_source.range_inclusive(),
+        };
+
+        fn parse<'a>(it: &mut impl Iterator<Item = &'a str>) -> Option<((i64, i64), (i64, i64))> {
+            let line = it.next()?;
+            let x = line.split(", ").nth(0)?;
+            let x = str::parse(&x[2..]).ok()?;
+            let x = (x, x);
+
+            let y = line.split(", ").nth(1)?;
+
+            let (is_y, y) = match y.split_at(2) {
+                ("y=", rest) => (true, rest),
+                (_, rest) => (false, rest),
+            };
+
+            let y = {
+                let mut p = y.split("..");
+                (str::parse(p.next()?).ok()?, str::parse(p.next()?).ok()?)
+            };
+
+            let (x, y) = if is_y { (x, y) } else { (y, x) };
+
+            Some((x, y))
         }
     }
 
@@ -72,12 +94,19 @@ impl Tiles {
                     continue;
                 }
 
-                match self.get((x, y)) {
+                let tile = match self.get((x, y)) {
+                    Some(tile) => tile,
+                    None => {
+                        write!(out, "?")?;
+                        continue;
+                    }
+                };
+
+                match tile {
                     Tile::Clay => write!(out, "#")?,
                     Tile::Still => write!(out, "~")?,
                     Tile::Flowing => write!(out, "|")?,
-                    Tile::None => write!(out, ".")?,
-                    _ => write!(out, "?")?,
+                    Tile::Empty => write!(out, ".")?,
                 }
             }
 
@@ -88,15 +117,14 @@ impl Tiles {
     }
 
     /// Check what is on the given tile.
-    pub fn get(&self, (x, y): (i64, i64)) -> Tile {
+    ///
+    /// Returns `None` if the request is out of bounds, otherwise returns the tile.
+    pub fn get(&self, (x, y): (i64, i64)) -> Option<Tile> {
         if !self.ry_with_source.contains(&y) {
-            return Tile::OutOfBounds;
+            return None;
         }
 
-        match self.tiles.get(&(x, y)).cloned() {
-            Some(tile) => tile,
-            None => Tile::None,
-        }
+        Some(self.tiles.get(&(x, y)).cloned().unwrap_or(Tile::Empty))
     }
 
     /// Fill x range with something.
@@ -159,7 +187,7 @@ fn solve(tiles: &mut Tiles) -> Result<(usize, usize), Error> {
         // digest the floor queue.
         while let Some((x, y)) = floor_queue.pop_front() {
             // we are on a floor that is already filled, keep trying!
-            if let Tile::Still = tiles.get((x, y)) {
+            if let Some(Tile::Still) = tiles.get((x, y)) {
                 floor_queue.push_back((x, y - 1));
                 continue;
             }
@@ -169,7 +197,7 @@ fn solve(tiles: &mut Tiles) -> Result<(usize, usize), Error> {
 
             match (left, right) {
                 // bounded.
-                ((Tile::Clay, left), (Tile::Clay, right)) => {
+                ((Some(Tile::Clay), left), (Some(Tile::Clay), right)) => {
                     tiles.fill_x(left.0..=right.0, y, Tile::Still)?;
                     floor_queue.push_back((x, y - 1));
                 }
@@ -178,15 +206,12 @@ fn solve(tiles: &mut Tiles) -> Result<(usize, usize), Error> {
 
                     for m in vec![left, right] {
                         match m {
-                            (Tile::None, (x, y)) => {
+                            // NB: empty tile is another position to drop from.
+                            (Some(Tile::Empty), (x, y)) => {
                                 drop_queue.push_back((x, y + 1));
                             }
-                            (Tile::Clay, _) => {}
-                            (Tile::OutOfBounds, _) => {}
-                            (Tile::Flowing, _) => {}
-                            other => {
-                                bail!("Unexpected tile: {:?}", other);
-                            }
+                            (Some(Tile::Clay), _) | (Some(Tile::Flowing), _) | (None, _) => {}
+                            other => bail!("Unexpected tile: {:?}", other),
                         }
                     }
                 }
@@ -232,16 +257,16 @@ fn solve(tiles: &mut Tiles) -> Result<(usize, usize), Error> {
         tiles: &Tiles,
         (mut x, y): (i64, i64),
         dir: i64,
-    ) -> Result<(Tile, (i64, i64)), Error> {
+    ) -> Result<(Option<Tile>, (i64, i64)), Error> {
         loop {
             match tiles.get((x + dir, y)) {
-                Tile::Clay => return Ok((Tile::Clay, (x, y))),
-                Tile::Still => bail!("Encountered unexpected still tile at {:?}", (x, y)),
+                Some(Tile::Clay) => return Ok((Some(Tile::Clay), (x, y))),
+                Some(Tile::Still) => bail!("Encountered unexpected still tile at {:?}", (x, y)),
                 _ => {}
             }
 
             match tiles.get((x, y + 1)) {
-                Tile::Clay | Tile::Still => {}
+                Some(Tile::Clay) | Some(Tile::Still) => {}
                 tile => return Ok((tile, (x, y))),
             }
 
@@ -252,10 +277,10 @@ fn solve(tiles: &mut Tiles) -> Result<(usize, usize), Error> {
     fn scan_down(tiles: &Tiles, (x, mut y): (i64, i64)) -> Option<((i64, i64), Tile)> {
         loop {
             match tiles.get((x, y)) {
-                Tile::Flowing => return Some(((x, y - 1), Tile::Flowing)),
-                Tile::None => {}
-                Tile::OutOfBounds => return None,
-                tile => return Some(((x, y - 1), tile)),
+                Some(Tile::Flowing) => return Some(((x, y - 1), Tile::Flowing)),
+                Some(Tile::Empty) => {}
+                Some(tile) => return Some(((x, y - 1), tile)),
+                None => return None,
             }
 
             y += 1;
@@ -270,27 +295,4 @@ fn main() -> Result<(), Error> {
     assert_eq!(solve(&mut tiles)?, (34244, 28202));
     tiles.visualize()?;
     Ok(())
-}
-
-fn parse<'a>(it: &mut impl Iterator<Item = &'a str>) -> Option<((i64, i64), (i64, i64))> {
-    let line = it.next()?;
-    let x = line.split(", ").nth(0)?;
-    let x = str::parse(&x[2..]).ok()?;
-    let x = (x, x);
-
-    let y = line.split(", ").nth(1)?;
-
-    let (is_y, y) = match y.split_at(2) {
-        ("y=", rest) => (true, rest),
-        (_, rest) => (false, rest),
-    };
-
-    let y = {
-        let mut p = y.split("..");
-        (str::parse(p.next()?).ok()?, str::parse(p.next()?).ok()?)
-    };
-
-    let (x, y) = if is_y { (x, y) } else { (y, x) };
-
-    Some((x, y))
 }
