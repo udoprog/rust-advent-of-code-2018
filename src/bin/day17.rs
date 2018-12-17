@@ -51,33 +51,40 @@ impl Tiles {
     }
 
     /// Visualize the tiles.
-    fn visualize(&self) {
-        for y in self.ry.clone() {
-            let (x0, x1) = self
-                .tiles
-                .iter()
-                .map(|t| (t.0).0)
-                .minmax()
-                .into_option()
-                .expect("minmax");
+    fn visualize(&self) -> Result<(), Error> {
+        use std::io::{self, Write};
 
+        let stdout = io::stdout();
+        let mut out = stdout.lock();
+
+        let (x0, x1) = self
+            .tiles
+            .iter()
+            .map(|t| (t.0).0)
+            .minmax()
+            .into_option()
+            .ok_or_else(|| format_err!("no x bounds"))?;
+
+        for y in self.ry.clone() {
             for x in x0..=x1 {
                 if (x, y) == self.source {
-                    print!("+");
+                    write!(out, "+")?;
                     continue;
                 }
 
                 match self.get((x, y)) {
-                    Tile::Clay => print!("#"),
-                    Tile::Still => print!("~"),
-                    Tile::Flowing => print!("|"),
-                    Tile::None => print!("."),
-                    _ => print!("?"),
+                    Tile::Clay => write!(out, "#")?,
+                    Tile::Still => write!(out, "~")?,
+                    Tile::Flowing => write!(out, "|")?,
+                    Tile::None => write!(out, ".")?,
+                    _ => write!(out, "?")?,
                 }
             }
 
-            println!("");
+            writeln!(out, "")?;
         }
+
+        Ok(())
     }
 
     /// Check what is on the given tile.
@@ -258,10 +265,10 @@ fn solve(tiles: &mut Tiles) -> Result<(usize, usize), Error> {
 
 fn main() -> Result<(), Error> {
     assert_eq!(solve(&mut Tiles::load(input_str!("day17a.txt")))?, (57, 29));
-    assert_eq!(
-        solve(&mut Tiles::load(input_str!("day17.txt")))?,
-        (34244, 28202)
-    );
+    let mut tiles = Tiles::load(input_str!("day17.txt"));
+
+    assert_eq!(solve(&mut tiles)?, (34244, 28202));
+    tiles.visualize()?;
     Ok(())
 }
 
