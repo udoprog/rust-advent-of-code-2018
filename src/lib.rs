@@ -233,7 +233,7 @@ tuple!(Tup5, A, B, C, D, E);
 ///
 /// assert_eq!(dx.range_inclusive().collect::<Vec<_>>(), vec![3, 4, 5]);
 /// ```
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct MinMax<Idx> {
     value: Option<(Idx, Idx)>,
 }
