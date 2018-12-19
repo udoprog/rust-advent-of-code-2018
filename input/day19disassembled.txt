@@ -1,0 +1,43 @@
+a = 1
+b = 0
+c = 0
+d = 0
+e = 0
+f = 0
+
+d = 930
+
+if a == 1 {
+    d = 10551330
+    a = 0
+}
+
+f = 1
+
+'outer:
+loop {
+    b = 1
+
+    'inner:
+    loop {
+        c = f * b
+
+        if c == d {
+            a += f
+        }
+
+        b += 1
+
+        if b <= d {
+            continue;
+        }
+
+        f += 1
+
+        if f <= d {
+            continue 'outer;
+        }
+
+        exit(0)
+    }
+}

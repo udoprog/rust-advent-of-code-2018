@@ -1,0 +1,45 @@
+00: addi %ip 16 %ip
+01: seti 1 /* ignore */ %f
+02: seti 1 /* ignore */ %b
+
+
+03: mulr %f %b %c
+04: eqrr %c %d %c
+05: addr %c %ip %ip
+06: addi %ip 1 %ip
+07: addr %f %a %a
+08: addi %b 1 %b
+09: gtrr %b %d %c
+10: addr %ip %c %ip
+11: seti 2 /* ignore */ %ip
+
+12: addi %f 1 %f
+13: gtrr %f %d %c
+14: addr %c %ip %ip
+15: seti 1 /* ignore */ %ip
+16: mulr %ip %ip %ip
+
+
+17: addi %d 2 %d
+18: mulr %d %d %d
+19: mulr %ip %d %d
+20: muli %d 11 %d
+21: addi %c 4 %c
+22: mulr %c %ip %c
+23: addi %c 6 %c
+24: addr %d %c %d
+
+25: addr %ip %a %ip
+26: seti 0 /* ignore */ %ip
+
+
+27: setr %ip /* ignore */ %c
+28: mulr %c %ip %c
+29: addr %ip %c %c
+30: mulr %ip %c %c
+31: muli %c 14 %c
+32: mulr %c %ip %c
+33: addr %d %c %d
+34: seti 0 /* ignore */ %a
+
+35: seti 0 /* ignore */ %ip
