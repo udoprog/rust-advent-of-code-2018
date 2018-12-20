@@ -222,28 +222,52 @@ impl Instruction {
 fn names<'a>(mut it: impl Iterator<Item = &'a str>) -> Result<(), Error> {
     let mut device = Device::default();
 
-    device.ip = it.next().and_then(|s| if s.starts_with("#ip") {
-        str::parse(s.split(" ").nth(1)?).ok()
-    } else {
-        None
-    }).ok_or_else(|| format_err!("expected #ip statement"))?;
+    device.ip = it
+        .next()
+        .and_then(|s| {
+            if s.starts_with("#ip") {
+                str::parse(s.split(" ").nth(1)?).ok()
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| format_err!("expected #ip statement"))?;
 
     for (idx, inst) in it.flat_map(Instruction::decode).enumerate() {
         let [a, b] = inst.op_code.names(&device, inst.inputs);
-        println!("{:02}: {} {} {} {}", idx, inst.op_code, a, b, device.reg_name(inst.output));
+        println!(
+            "{:02}: {} {} {} {}",
+            idx,
+            inst.op_code,
+            a,
+            b,
+            device.reg_name(inst.output)
+        );
     }
 
     Ok(())
 }
 
-fn solve<'a, V>(mut visuals: V, mut it: impl Iterator<Item = &'a str>, initial: i64) -> Result<i64, Error> where V: Visuals {
+fn solve<'a, V>(
+    mut visuals: V,
+    mut it: impl Iterator<Item = &'a str>,
+    initial: i64,
+) -> Result<i64, Error>
+where
+    V: Visuals,
+{
     let mut device = Device::default();
 
-    device.ip = it.next().and_then(|s| if s.starts_with("#ip") {
-        str::parse(s.split(" ").nth(1)?).ok()
-    } else {
-        None
-    }).ok_or_else(|| format_err!("expected #ip statement"))?;
+    device.ip = it
+        .next()
+        .and_then(|s| {
+            if s.starts_with("#ip") {
+                str::parse(s.split(" ").nth(1)?).ok()
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| format_err!("expected #ip statement"))?;
 
     *device.reg(0)? = initial;
 
@@ -299,14 +323,21 @@ fn part2() -> u64 {
 }
 
 fn main() -> Result<(), Error> {
-    assert_eq!(solve(NoopVisuals, input_str!("day19.txt").lines(), 0)?, 2304);
+    assert_eq!(
+        solve(NoopVisuals, input_str!("day19.txt").lines(), 0)?,
+        2304
+    );
     assert_eq!(part2(), 28137600);
 
     names(input_str!("day19.txt").lines())?;
 
     // Note: this is the interactive visualization used to extract inputs.
     // You _will_ have to CTRL+C to exit.
-    solve(NcursesVisuals::new(0).interactive(), input_str!("day19.txt").lines(), 0)?;
+    solve(
+        NcursesVisuals::new(0).interactive(),
+        input_str!("day19.txt").lines(),
+        0,
+    )?;
     Ok(())
 }
 
