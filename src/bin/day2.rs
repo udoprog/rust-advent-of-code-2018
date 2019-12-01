@@ -26,7 +26,7 @@ fn main() -> Result<(), Error> {
 
     let mut set = BTreeSet::new();
 
-    for line in lines!(input!("day2.txt"), (String)) {
+    for line in lines!(input!("day2.txt"), String) {
         let line = line?.0;
 
         let chars = line.chars().collect::<Vec<_>>();
@@ -45,7 +45,7 @@ fn main() -> Result<(), Error> {
     }
 
     let checksum = [2, 3]
-        .into_iter()
+        .iter()
         .flat_map(|k| counts.get(&k))
         .fold(1, |a, b| a * b);
 

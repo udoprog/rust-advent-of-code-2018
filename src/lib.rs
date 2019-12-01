@@ -1,5 +1,5 @@
 pub use chrono::Timelike;
-pub use failure::{bail, format_err, Error, ResultExt};
+pub use anyhow::{bail, format_err, Error, Context};
 pub use hashbrown::*;
 pub use itertools::Itertools;
 pub use nalgebra as na;
@@ -209,9 +209,9 @@ macro_rules! tuple {
     }
 }
 
-/// Decoded a pair of values.
+// Decoded a pair of values.
 tuple!(Pair, A, B);
-/// Decodes a triple of values.
+// Decodes a triple of values.
 tuple!(Triple, A, B, C);
 tuple!(Tup4, A, B, C, D);
 tuple!(Tup5, A, B, C, D, E);

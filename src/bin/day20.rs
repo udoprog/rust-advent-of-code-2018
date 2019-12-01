@@ -144,7 +144,7 @@ impl Expr {
         Ok(Expr { items })
     }
 
-    fn parse_group(it: &mut Iterator<Item = char>) -> Result<Vec<Expr>, Error> {
+    fn parse_group(it: &mut impl Iterator<Item = char>) -> Result<Vec<Expr>, Error> {
         use std::mem;
 
         let mut route = Vec::new();

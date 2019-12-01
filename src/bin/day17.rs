@@ -1,5 +1,3 @@
-#![feature(range_contains)]
-
 use aoc2018::*;
 
 use std::ops::RangeInclusive;
